@@ -23,7 +23,7 @@ THIS_DIRECTORY = Path(__file__).parent
 
 VERSION = "1.26.0"  # PEP-440
 
-NAME = "streamlit"
+NAME = "streamlit-sanitized"
 
 # IMPORTANT: We should try very hard *not* to add dependencies to Streamlit.
 # And if you do add one, make the required version as general as possible:
