@@ -38,6 +38,9 @@ import rehypeKatex from "rehype-katex"
 import { Link as LinkIcon } from "react-feather"
 import remarkEmoji from "remark-emoji"
 import remarkGfm from "remark-gfm"
+import rehypeSanitize from "rehype-sanitize"
+import deepmerge from "deepmerge"
+import { defaultSchema as defaultSanitizeSchema } from "hast-util-sanitize"
 import CodeBlock from "@streamlit/lib/src/components/elements/CodeBlock"
 import IsSidebarContext from "@streamlit/lib/src/components/core/IsSidebarContext"
 import ErrorBoundary from "@streamlit/lib/src/components/shared/ErrorBoundary"
@@ -319,9 +322,23 @@ export function RenderedMarkdown({
     remarkColoring,
   ]
 
+  const sanitizeSchema = deepmerge(defaultSanitizeSchema, {
+    attributes: {
+      "*": ["className", "style"],
+      a: ["download"],
+    },
+    protocols: {
+      cite: ["data"],
+      href: ["data"],
+      longDesc: ["data"],
+      src: ["data"],
+    },
+  })
+
   const rehypePlugins: PluggableList = [
     rehypeKatex,
     ...(allowHTML ? [rehypeRaw] : []),
+    [rehypeSanitize, sanitizeSchema],
   ]
 
   // Sets disallowed markdown for widget labels

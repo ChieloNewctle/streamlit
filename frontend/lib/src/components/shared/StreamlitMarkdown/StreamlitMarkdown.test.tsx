@@ -139,11 +139,21 @@ describe("StreamlitMarkdown", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("propagates header attributes to custom header", () => {
+  it("doesn't propagate header attributes to custom header", () => {
     const source = '<h1 data-test="lol">alsdkjhflaf</h1>'
     render(<StreamlitMarkdown source={source} allowHTML />)
     const h1 = screen.getByRole("heading")
-    expect(h1).toHaveAttribute("data-test", "lol")
+    expect(h1).not.toHaveAttribute("data-test")
+  })
+
+  it("prunes unsafe attributes and allows data url download links", () => {
+    const source =
+      '<a href="data:text-plain,yeah" onclick="return false;" download="wow.txt">click me</a>'
+    render(<StreamlitMarkdown source={source} allowHTML />)
+    const element = screen.getByText("click me")
+    expect(element).toHaveAttribute("href", "data:text-plain,yeah")
+    expect(element).toHaveAttribute("download", "wow.txt")
+    expect(element).not.toHaveAttribute("onclick")
   })
 
   it("displays captions correctly", () => {
