@@ -1,0 +1,18 @@
+name: Run Tests
+
+on:
+  # Manual Trigger GH CLI -> gh workflow run release.yml --ref <tag>
+  workflow_dispatch:
+
+jobs:
+  run-python-tests:
+    uses: ./.github/workflows/python-versions.yml
+    with:
+      ref: ${{ github.ref_name }}
+    secrets:
+      PARAMETER_PASSWORD: ${{ secrets.PARAMETER_PASSWORD }}
+
+  run-javascript-tests:
+    uses: ./.github/workflows/js-tests.yml
+    with:
+      ref: ${{ github.ref_name }}

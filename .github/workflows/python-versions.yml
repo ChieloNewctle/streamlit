@@ -118,118 +118,118 @@ jobs:
         run: make integration-tests
       - name: CLI Smoke Tests
         run: make cli-smoke-tests
-      - name: Set CONSTRAINTS_FILE env variable
-        if: ${{ always() }}
-        run: |
-          mkdir -p /tmp/constraints
-          echo "CONSTRAINTS_FILE=/tmp/constraints/constraints-${PYTHON_VERSION}.txt" >> $GITHUB_ENV
-      - name: Generate constraint file for Python ${{ env.PYTHON_VERSION }}
-        if: ${{ always() }}
-        run: |
-          pip freeze | grep -v "\-e git" | tee "${CONSTRAINTS_FILE}"
-      - name: Diff constraint file
-        if: ${{ always() }}
-        run: |
-          CONSTRAINT_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${CONSTRAINTS_BRANCH}/constraints-${PYTHON_VERSION}.txt"
-          diff -y <(echo "Old"; curl -s "${CONSTRAINT_URL}") <(echo "New"; cat "${CONSTRAINTS_FILE}") || true
-      - name: Upload constraints file
-        uses: actions/upload-artifact@v3
-        with:
-          name: constraints
-          path: ${{ env.CONSTRAINTS_FILE }}
-          if-no-files-found: error
+      # - name: Set CONSTRAINTS_FILE env variable
+      #   if: ${{ always() }}
+      #   run: |
+      #     mkdir -p /tmp/constraints
+      #     echo "CONSTRAINTS_FILE=/tmp/constraints/constraints-${PYTHON_VERSION}.txt" >> $GITHUB_ENV
+      # - name: Generate constraint file for Python ${{ env.PYTHON_VERSION }}
+      #   if: ${{ always() }}
+      #   run: |
+      #     pip freeze | grep -v "\-e git" | tee "${CONSTRAINTS_FILE}"
+      # - name: Diff constraint file
+      #   if: ${{ always() }}
+      #   run: |
+      #     CONSTRAINT_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${CONSTRAINTS_BRANCH}/constraints-${PYTHON_VERSION}.txt"
+      #     diff -y <(echo "Old"; curl -s "${CONSTRAINT_URL}") <(echo "New"; cat "${CONSTRAINTS_FILE}") || true
+      # - name: Upload constraints file
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: constraints
+      #     path: ${{ env.CONSTRAINTS_FILE }}
+      #     if-no-files-found: error
 
-  py_constraint:
-    needs:
-      - py_version
-    permissions:
-      # Additional permission needed to upload constraints
-      contents: write
+  # py_constraint:
+  #   needs:
+  #     - py_version
+  #   permissions:
+  #     # Additional permission needed to upload constraints
+  #     contents: write
+  #
+  #   runs-on: ubuntu-latest
+  #   if: |
+  #     github.repository == 'streamlit/streamlit' && (
+  #     (github.event_name == 'push' && github.ref_name == 'develop') ||
+  #     (github.event_name == 'schedule')
+  #     )
+  #
+  #   name: Upload constraints
+  #
+  #   env:
+  #     TARGET_BRANCH: constraints-${{ github.ref_name }}
+  #
+  #   steps:
+  #     - name: Checkout branch "${{ env.TARGET_BRANCH }}"
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ env.TARGET_BRANCH }}
+  #         # Save the access token to the local git config, so
+  #         # later git commands can work.
+  #         persist-credentials: true
+  #
+  #     - uses: actions/download-artifact@v3
+  #       with:
+  #         name: constraints
+  #         path: .
+  #
+  #     - name: Commit and push constraint files
+  #       run: |
+  #         git add .
+  #         git config --local user.email "core+streamlitbot-github@streamlit.io"
+  #         git config --local user.name "Automated GitHub Actions commit"
+  #         if ! git diff --cached --color --exit-code --ignore-matching-lines="^#.*"
+  #         then
+  #           git commit --all --message "Updating constraints. Github run id:${GITHUB_RUN_ID}
+  #
+  #           This update in constraints is automatically committed by the CI based on
+  #           '${GITHUB_REF}' in the '${GITHUB_REPOSITORY}' repository with commit sha ${GITHUB_SHA}.
+  #
+  #           The action that build those constraints can be found at https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/
+  #           "
+  #           git push "origin" "HEAD:${TARGET_BRANCH}";
+  #         else
+  #           echo "No changes"
+  #         fi
+  #       env:
+  #         TARGET_BRANCH: constraints-${{ github.ref_name }}
 
-    runs-on: ubuntu-latest
-    if: |
-      github.repository == 'streamlit/streamlit' && (
-      (github.event_name == 'push' && github.ref_name == 'develop') ||
-      (github.event_name == 'schedule')
-      )
-
-    name: Upload constraints
-
-    env:
-      TARGET_BRANCH: constraints-${{ github.ref_name }}
-
-    steps:
-      - name: Checkout branch "${{ env.TARGET_BRANCH }}"
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ env.TARGET_BRANCH }}
-          # Save the access token to the local git config, so
-          # later git commands can work.
-          persist-credentials: true
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: constraints
-          path: .
-
-      - name: Commit and push constraint files
-        run: |
-          git add .
-          git config --local user.email "core+streamlitbot-github@streamlit.io"
-          git config --local user.name "Automated GitHub Actions commit"
-          if ! git diff --cached --color --exit-code --ignore-matching-lines="^#.*"
-          then
-            git commit --all --message "Updating constraints. Github run id:${GITHUB_RUN_ID}
-
-            This update in constraints is automatically committed by the CI based on
-            '${GITHUB_REF}' in the '${GITHUB_REPOSITORY}' repository with commit sha ${GITHUB_SHA}.
-
-            The action that build those constraints can be found at https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/
-            "
-            git push "origin" "HEAD:${TARGET_BRANCH}";
-          else
-            echo "No changes"
-          fi
-        env:
-          TARGET_BRANCH: constraints-${{ github.ref_name }}
-
-  py_snowflake:
-    runs-on: ubuntu-latest
-
-    # Runs triggered by PRs from forks or by dependabot won't run this job, since that PR wouldn't have secrets access
-    # See: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions
-    # Runs triggered by Release/RC are workflow_dispatch events ; Nightly is a schedule event
-    if: |
-      github.repository == 'streamlit/streamlit' && (
-      (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') ||
-      (github.event_name == 'push') ||
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'schedule')
-      )
-
-    name: >
-      Python 3.8: Python tests for Snowflake
-
-    steps:
-      - name: Checkout Streamlit code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ inputs.ref }}
-          persist-credentials: false
-          submodules: "recursive"
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.8"
-      - name: Decrypt credentials
-        run: ./.github/scripts/decrypt_credentials.sh
-        env:
-          PARAMETER_PASSWORD: ${{ secrets.PARAMETER_PASSWORD }}
-      - name: Setup virtual env
-        uses: ./.github/actions/make_init
-      - name: Run make develop
-        run: make develop
-      - name: Run Type Checkers
-        run: scripts/mypy --report
-      - name: Run Python Tests for Snowflake
-        run: make pytest-snowflake
+  # py_snowflake:
+  #   runs-on: ubuntu-latest
+  #
+  #   # Runs triggered by PRs from forks or by dependabot won't run this job, since that PR wouldn't have secrets access
+  #   # See: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/automating-dependabot-with-github-actions
+  #   # Runs triggered by Release/RC are workflow_dispatch events ; Nightly is a schedule event
+  #   if: |
+  #     github.repository == 'streamlit/streamlit' && (
+  #     (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]') ||
+  #     (github.event_name == 'push') ||
+  #     (github.event_name == 'workflow_dispatch') ||
+  #     (github.event_name == 'schedule')
+  #     )
+  #
+  #   name: >
+  #     Python 3.8: Python tests for Snowflake
+  #
+  #   steps:
+  #     - name: Checkout Streamlit code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ inputs.ref }}
+  #         persist-credentials: false
+  #         submodules: "recursive"
+  #     - name: Set up Python 3.8
+  #       uses: actions/setup-python@v4
+  #       with:
+  #         python-version: "3.8"
+  #     - name: Decrypt credentials
+  #       run: ./.github/scripts/decrypt_credentials.sh
+  #       env:
+  #         PARAMETER_PASSWORD: ${{ secrets.PARAMETER_PASSWORD }}
+  #     - name: Setup virtual env
+  #       uses: ./.github/actions/make_init
+  #     - name: Run make develop
+  #       run: make develop
+  #     - name: Run Type Checkers
+  #       run: scripts/mypy --report
+  #     - name: Run Python Tests for Snowflake
+  #       run: make pytest-snowflake

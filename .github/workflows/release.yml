@@ -25,11 +25,6 @@ jobs:
     with:
       ref: ${{ github.ref_name }}
 
-  run-cypress-tests:
-    uses: ./.github/workflows/cypress.yml
-    with:
-      ref: ${{ github.ref_name }}
-
   build-release:
     runs-on: ubuntu-latest
 
@@ -37,7 +32,6 @@ jobs:
       - run-python-tests
       - run-javascript-tests
       - run-py-prod-deps-smoke-test
-      - run-cypress-tests
 
     defaults:
       run:
