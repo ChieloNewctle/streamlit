@@ -336,7 +336,7 @@ class ComputeWidgetIdTests(DeltaGeneratorTestCase):
 
         # Add some kwargs that are passed to compute_widget_id but don't appear in widget
         # signatures.
-        for kwarg in ["form_id", "user_key"]:
+        for kwarg in ["form_id", "user_key", "page"]:
             kwargs[kwarg] = ANY
 
         return kwargs
@@ -398,6 +398,11 @@ class ComputeWidgetIdTests(DeltaGeneratorTestCase):
         del expected_sig["form_id"]
         if widget_func == st.button:
             expected_sig["is_form_submitter"] = ANY
+        # we exclude `data` for `st.download_button` here and not
+        # in `signature_to_expected_kwargs`, because `data` param is also used for
+        # `st.data_editor`.
+        if widget_func == st.download_button:
+            del expected_sig["data"]
 
         patched_compute_widget_id.assert_called_with(ANY, **expected_sig)
 

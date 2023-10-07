@@ -23,6 +23,7 @@ from parameterized import parameterized
 import streamlit as st
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.LabelVisibilityMessage_pb2 import LabelVisibilityMessage
+from streamlit.testing.v1.app_test import AppTest
 from tests.delta_generator_test_case import DeltaGeneratorTestCase
 
 
@@ -41,6 +42,7 @@ class RadioTest(DeltaGeneratorTestCase):
         )
         self.assertEqual(c.default, 0)
         self.assertEqual(c.disabled, False)
+        self.assertEqual(c.HasField("default"), True)
         self.assertEqual(c.captions, [])
 
     def test_just_disabled(self):
@@ -49,6 +51,17 @@ class RadioTest(DeltaGeneratorTestCase):
 
         c = self.get_delta_from_queue().new_element.radio
         self.assertEqual(c.disabled, True)
+
+    def test_none_value(self):
+        """Test that it can be called with None as index value."""
+        st.radio("the label", ("m", "f"), index=None)
+
+        c = self.get_delta_from_queue().new_element.radio
+        self.assertEqual(c.label, "the label")
+        # If a proto property is null is not determined by this value,
+        # but by the check via the HasField method:
+        self.assertEqual(c.default, 0)
+        self.assertEqual(c.HasField("default"), False)
 
     def test_horizontal(self):
         """Test that it can be called with horizontal param."""
@@ -235,3 +248,26 @@ class RadioTest(DeltaGeneratorTestCase):
         self.assertEqual(c.label, "the label")
         self.assertEqual(c.default, 0)
         self.assertEqual(c.captions, ["first caption", "", "", "last caption"])
+
+
+def test_radio_interaction():
+    """Test interactions with an empty radio widget."""
+    at = AppTest.from_string(
+        """
+    import streamlit as st
+
+    st.radio("the label", ("m", "f"), index=None)
+    """
+    ).run()
+    radio = at.radio[0]
+    assert radio.value is None
+
+    # Select option m
+    at = radio.set_value("m").run()
+    radio = at.radio[0]
+    assert radio.value == "m"
+
+    # # Clear the value
+    at = radio.set_value(None).run()
+    radio = at.radio[0]
+    assert radio.value is None

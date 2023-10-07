@@ -39,6 +39,14 @@ def _deep_get(dictionary, *keys):
     )
 
 
+ST_CHART_ARGS = [
+    (st.area_chart, "area"),
+    (st.bar_chart, "bar"),
+    (st.line_chart, "line"),
+    (st.scatter_chart, "circle"),
+]
+
+
 class ArrowAltairTest(DeltaGeneratorTestCase):
     """Test ability to marshall arrow_altair_chart proto."""
 
@@ -53,7 +61,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
             }
         )
 
-        st._arrow_altair_chart(chart)
+        st.altair_chart(chart)
 
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
 
@@ -82,7 +90,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
         ).set_index("index")
 
         chart, _ = altair._generate_chart(ChartType.LINE, df)
-        st._arrow_altair_chart(chart)
+        st.altair_chart(chart)
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
         spec_dict = json.loads(proto.spec)
 
@@ -107,7 +115,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
         ).set_index("index")
 
         chart, _ = altair._generate_chart(ChartType.LINE, df)
-        st._arrow_altair_chart(chart, theme=theme_value)
+        st.altair_chart(chart, theme=theme_value)
 
         el = self.get_delta_from_queue().new_element
         self.assertEqual(el.arrow_vega_lite_chart.theme, proto_value)
@@ -119,7 +127,7 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
 
         chart, _ = altair._generate_chart(ChartType.LINE, df)
         with self.assertRaises(StreamlitAPIException) as exc:
-            st._arrow_altair_chart(chart, theme="bad_theme")
+            st.altair_chart(chart, theme="bad_theme")
 
         self.assertEqual(
             f'You set theme="bad_theme" while Streamlit charts only support theme=”streamlit” or theme=None to fallback to the default library theme.',
@@ -130,14 +138,8 @@ class ArrowAltairTest(DeltaGeneratorTestCase):
 class ArrowChartsTest(DeltaGeneratorTestCase):
     """Test Arrow charts."""
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_empty_arrow_chart(self, chart_command: Callable, altair_type: str):
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_empty_chart(self, chart_command: Callable, altair_type: str):
         """Test arrow chart with no arguments."""
         EXPECTED_DATAFRAME = pd.DataFrame()
 
@@ -160,17 +162,11 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             EXPECTED_DATAFRAME,
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_implicit_x_and_y(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_implicit_x_and_y(
         self, chart_command: Callable, altair_type: str
     ):
-        """Test st._arrow_line_chart with implicit x and y."""
+        """Test st.line_chart with implicit x and y."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[20, "b", 30], [20, "c", 50]],
@@ -195,14 +191,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_pyspark_dataframe(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_pyspark_dataframe(
         self, chart_command: Callable, altair_type: str
     ):
         spark_df = pyspark_mocks.DataFrame(is_numpy_arr=True)
@@ -229,14 +219,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         self.assertEqual(output_df.columns[1], "color--p5bJXXpQgvPz6yvQMFiy")
         self.assertEqual(output_df.columns[2], "value--p5bJXXpQgvPz6yvQMFiy")
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_snowpark_dataframe(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_snowpark_dataframe(
         self, chart_command: Callable, altair_type: str
     ):
         snow_df = snowpark_mocks.DataFrame()
@@ -263,17 +247,11 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         self.assertEqual(output_df.columns[1], "color--p5bJXXpQgvPz6yvQMFiy")
         self.assertEqual(output_df.columns[2], "value--p5bJXXpQgvPz6yvQMFiy")
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_explicit_x_and_implicit_y(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_explicit_x_and_implicit_y(
         self, chart_command: Callable, altair_type: str
     ):
-        """Test st._arrow_line_chart with explicit x and implicit y."""
+        """Test st.line_chart with explicit x and implicit y."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[20, "b", 30], [20, "c", 50]],
@@ -297,17 +275,11 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_implicit_x_and_explicit_y(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_implicit_x_and_explicit_y(
         self, chart_command: Callable, altair_type: str
     ):
-        """Test st._arrow_line_chart with implicit x and explicit y."""
+        """Test st.line_chart with implicit x and explicit y."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[0, 30]], columns=["index--p5bJXXpQgvPz6yvQMFiy", "b"]
@@ -328,17 +300,11 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_implicit_x_and_explicit_y_sequence(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_implicit_x_and_explicit_y_sequence(
         self, chart_command: Callable, altair_type: str
     ):
-        """Test st._arrow_line_chart with implicit x and explicit y sequence."""
+        """Test st.line_chart with implicit x and explicit y sequence."""
         df = pd.DataFrame([[20, 30, 50, 60]], columns=["a", "b", "c", "d"])
         EXPECTED_DATAFRAME = pd.DataFrame(
             [[0, "b", 30], [0, "c", 50]],
@@ -368,14 +334,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_explicit_x_and_y(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_explicit_x_and_y(
         self, chart_command: Callable, altair_type: str
     ):
         """Test x/y-support for built-in charts."""
@@ -397,14 +357,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_explicit_x_and_y_sequence(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_explicit_x_and_y_sequence(
         self, chart_command: Callable, altair_type: str
     ):
         """Test support for explicit wide-format tables (i.e. y is a sequence)."""
@@ -432,16 +386,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_color_value(
-        self, chart_command: Callable, altair_type: str
-    ):
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_color_value(self, chart_command: Callable, altair_type: str):
         """Test color support for built-in charts."""
         df = pd.DataFrame([[20, 30]], columns=["a", "b"])
         EXPECTED_DATAFRAME = pd.DataFrame([[20, 30]], columns=["a", "b"])
@@ -457,16 +403,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_color_column(
-        self, chart_command: Callable, altair_type: str
-    ):
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_color_column(self, chart_command: Callable, altair_type: str):
         """Test color support for built-in charts."""
         df = pd.DataFrame(
             {
@@ -548,14 +486,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
                 check_names=False,
             )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
-    def test_arrow_chart_with_explicit_x_plus_y_and_color_sequence(
+    @parameterized.expand(ST_CHART_ARGS)
+    def test_chart_with_explicit_x_plus_y_and_color_sequence(
         self, chart_command: Callable, altair_type: str
     ):
         """Test color support for built-in charts with wide-format table."""
@@ -591,7 +523,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
     @parameterized.expand(
         [[None], [[]], [tuple()]],
     )
-    def test_arrow_chart_with_empty_color(self, color_arg: Any):
+    def test_chart_with_empty_color(self, color_arg: Any):
         """Test color support for built-in charts with wide-format table."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
 
@@ -611,17 +543,17 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
 
     @parameterized.expand(
         [
-            (st._arrow_area_chart, "a", "foooo"),
-            (st._arrow_bar_chart, "not-valid", "b"),
-            (st._arrow_line_chart, "foo", "bar"),
-            (st._arrow_line_chart, None, "bar"),
-            (st._arrow_line_chart, "foo", None),
-            (st._arrow_line_chart, "a", ["b", "foo"]),
-            (st._arrow_line_chart, None, "variable"),
-            (st._arrow_line_chart, "variable", ["a", "b"]),
+            (st.area_chart, "a", "foooo"),
+            (st.bar_chart, "not-valid", "b"),
+            (st.line_chart, "foo", "bar"),
+            (st.line_chart, None, "bar"),
+            (st.line_chart, "foo", None),
+            (st.line_chart, "a", ["b", "foo"]),
+            (st.line_chart, None, "variable"),
+            (st.line_chart, "variable", ["a", "b"]),
         ]
     )
-    def test_arrow_chart_with_x_y_invalid_input(
+    def test_chart_with_x_y_invalid_input(
         self,
         chart_command: Callable,
         x: str,
@@ -633,7 +565,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
         with pytest.raises(StreamlitAPIException):
             chart_command(df, x=x, y=y)
 
-    def test_arrow_chart_with_x_y_on_sliced_data(
+    def test_chart_with_x_y_on_sliced_data(
         self,
     ):
         """Test x/y-support for built-in charts on sliced data."""
@@ -653,8 +585,8 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    def test_arrow_line_chart_with_named_index(self):
-        """Test st._arrow_line_chart with a named index."""
+    def test_line_chart_with_named_index(self):
+        """Test st.line_chart with a named index."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
         df.set_index("a", inplace=True)
 
@@ -664,7 +596,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             columns=["a", "color--p5bJXXpQgvPz6yvQMFiy", "value--p5bJXXpQgvPz6yvQMFiy"],
         )
 
-        st._arrow_line_chart(df)
+        st.line_chart(df)
 
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
         chart_spec = json.loads(proto.spec)
@@ -674,13 +606,7 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             orig_df=df, expected_df=EXPECTED_DATAFRAME, chart_proto=proto
         )
 
-    @parameterized.expand(
-        [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
-        ]
-    )
+    @parameterized.expand(ST_CHART_ARGS)
     def test_unused_columns_are_dropped(
         self, chart_command: Callable, altair_type: str
     ):
@@ -691,9 +617,15 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
             columns=["z", "a", "b", "c", "x", "d", "e", "f"],
         )
 
-        chart_command(df, x="a", y="c", color="d")
+        if chart_command == st.scatter_chart:
+            chart_command(df, x="a", y="c", color="d", size="e")
+            EXPECTED_DATAFRAME = pd.DataFrame(
+                [[10, 40, 50, 30]], columns=["a", "d", "e", "c"]
+            )
+        else:
+            chart_command(df, x="a", y="c", color="d")
 
-        EXPECTED_DATAFRAME = pd.DataFrame([[10, 40, 30]], columns=["a", "d", "c"])
+            EXPECTED_DATAFRAME = pd.DataFrame([[10, 40, 30]], columns=["a", "d", "c"])
 
         proto = self.get_delta_from_queue().new_element.arrow_vega_lite_chart
         json.loads(proto.spec)
@@ -704,14 +636,12 @@ class ArrowChartsTest(DeltaGeneratorTestCase):
 
     @parameterized.expand(
         [
-            (st._arrow_area_chart, "area"),
-            (st._arrow_bar_chart, "bar"),
-            (st._arrow_line_chart, "line"),
+            (st.area_chart, "area"),
+            (st.bar_chart, "bar"),
+            (st.line_chart, "line"),
         ]
     )
-    def test_arrow_chart_with_bad_color_arg(
-        self, chart_command: Callable, altair_type: str
-    ):
+    def test_chart_with_bad_color_arg(self, chart_command: Callable, altair_type: str):
         """Test that we throw a pretty exception when colors arg is wrong."""
         df = pd.DataFrame([[20, 30, 50]], columns=["a", "b", "c"])
 

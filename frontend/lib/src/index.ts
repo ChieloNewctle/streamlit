@@ -33,13 +33,13 @@ export { FileUploadClient } from "./FileUploadClient"
 export { ComponentRegistry } from "./components/widgets/CustomComponent"
 export { BlockNode, AppRoot, ElementNode } from "./AppNode"
 export { Quiver } from "./dataframes/Quiver"
-export { default as VegaLiteChartElement } from "./components/elements/VegaLiteChart"
 export type {
   DeployedAppMetadata,
   IGuestToHostMessage,
   IMenuItem,
-  IAllowedMessageOriginsResponse,
+  IHostConfigResponse,
   IToolbarItem,
+  AppConfig,
 } from "./hostComm/types"
 export {
   default as Modal,
@@ -73,13 +73,7 @@ export { default as emotionLightTheme } from "./theme/emotionLightTheme"
 export type { ThemeConfig, EmotionTheme } from "./theme"
 export { mount, shallow, mockWindowLocation, render } from "./test_util"
 export { logError, logMessage, logWarning, logAlways } from "./util/log"
-export {
-  getPossibleBaseUris,
-  buildHttpUri,
-  SVG_PREFIX,
-  xssSanitizeSvg,
-  buildWsUri,
-} from "./util/UriUtil"
+export { getPossibleBaseUris, buildHttpUri, buildWsUri } from "./util/UriUtil"
 export type { BaseUriParts } from "./util/UriUtil"
 export { ensureError } from "./util/ErrorHandling"
 export {
@@ -120,7 +114,7 @@ export {
 } from "./util/utils"
 export { useIsOverflowing } from "./util/Hooks"
 export { LibContext } from "./components/core/LibContext"
-export type { LibContextProps } from "./components/core/LibContext"
+export type { LibContextProps, LibConfig } from "./components/core/LibContext"
 export { handleFavicon } from "./components/elements/Favicon"
 export { default as HostCommunicationManager } from "./hostComm"
 export { HOST_COMM_VERSION } from "./hostComm/HostCommunicationManager"

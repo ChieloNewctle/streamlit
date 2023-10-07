@@ -23,6 +23,7 @@ from parameterized import parameterized
 import streamlit as st
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.LabelVisibilityMessage_pb2 import LabelVisibilityMessage
+from streamlit.testing.v1.app_test import AppTest
 from tests.delta_generator_test_case import DeltaGeneratorTestCase
 
 
@@ -40,8 +41,9 @@ class SelectboxTest(DeltaGeneratorTestCase):
             LabelVisibilityMessage.LabelVisibilityOptions.VISIBLE,
         )
         self.assertEqual(c.default, 0)
+        self.assertEqual(c.HasField("default"), True)
         self.assertEqual(c.disabled, False)
-        self.assertEqual(c.placeholder, "Select...")
+        self.assertEqual(c.placeholder, "Choose an option")
 
     def test_just_disabled(self):
         """Test that it can be called with disabled param."""
@@ -57,6 +59,17 @@ class SelectboxTest(DeltaGeneratorTestCase):
         c = self.get_delta_from_queue().new_element.selectbox
         self.assertEqual(c.label, "the label")
         self.assertEqual(c.default, 1)
+
+    def test_none_index(self):
+        """Test that it can be called with None as index value."""
+        st.selectbox("the label", ("m", "f"), index=None)
+
+        c = self.get_delta_from_queue().new_element.selectbox
+        self.assertEqual(c.label, "the label")
+        # If a proto property is null is not determined by this value,
+        # but by the check via the HasField method:
+        self.assertEqual(c.default, 0)
+        self.assertEqual(c.HasField("default"), False)
 
     def test_noneType_option(self):
         """Test NoneType option value."""
@@ -188,3 +201,25 @@ class SelectboxTest(DeltaGeneratorTestCase):
 
         c = self.get_delta_from_queue().new_element.selectbox
         self.assertEqual(c.placeholder, "Please select")
+
+
+def test_selectbox_interaction():
+    """Test interactions with an empty selectbox widget."""
+    at = AppTest.from_string(
+        """
+    import streamlit as st
+    st.selectbox("the label", ("m", "f"), index=None)
+    """
+    ).run()
+    selectbox = at.selectbox[0]
+    assert selectbox.value is None
+
+    # Select option m
+    at = selectbox.set_value("m").run()
+    selectbox = at.selectbox[0]
+    assert selectbox.value == "m"
+
+    # # Clear the value
+    at = selectbox.set_value(None).run()
+    selectbox = at.selectbox[0]
+    assert selectbox.value is None
